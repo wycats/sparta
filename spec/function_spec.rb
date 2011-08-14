@@ -13,4 +13,9 @@ describe "Function" do
     e("x = 1; y = 2; (function (){ return x + y; })();").should == 3
     e("x = 1; y = 2; (function (){ z = x + y; })(); z").should == 3
   end
+
+  it "can set local variables" do
+    e("x = 1; y = 2; (function (){ return x + y; })();").should == 3
+    e("x = 1; y = 2; (function (){ var x = 5; z = x + y; })(); x + y + z").should == 10
+  end
 end

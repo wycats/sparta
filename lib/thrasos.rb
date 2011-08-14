@@ -108,6 +108,11 @@ module Thrasos
       o.value.each { |x| x.accept(self) }
     end
 
+    def visit_VarDeclNode(o)
+      o.value.accept(self)
+      s.set_local o.name
+    end
+
     def visit_FunctionExprNode(o)
       # TODO We need to handle arguments eventually ...
       body = o.function_body.value
