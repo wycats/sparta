@@ -6,9 +6,18 @@ module Thrasos
     attr_reader :variables, :generator
     alias g generator
 
-    def initialize(generator)
+    def initialize(generator, parent)
+      @parent    = parent
       @variables = []
       @generator = generator
+    end
+
+    def depth_for(name, depth=0)
+      if existing = @variables.index(name)
+        [self, depth]
+      else
+        @parent.depth_for(name, depth + 1)
+      end
     end
 
     def slot_for(name)
@@ -20,12 +29,38 @@ module Thrasos
       end
     end
 
-    def set_local(name)
+    def set_local(name, depth = 0)
       g.set_local slot_for(name)
     end
 
-    def push_local(name)
-      g.push_local slot_for(name)
+    def set_variable(name)
+      scope, depth = depth_for(name)
+
+      if depth == 0
+        scope.set_local name
+      else
+        g.set_local_depth depth, scope.slot_for(name)
+      end
+    end
+
+    def push_variable(name)
+      scope, depth = depth_for(name)
+
+      if depth == 0
+        g.push_local slot_for(name)
+      else
+        g.push_local_depth depth, scope.slot_for(name)
+      end
+    end
+  end
+
+  class GlobalScope < Scope
+    def initialize(generator)
+      super(generator, nil)
+    end
+
+    def depth_for(name, depth = 0)
+      [self, depth]
     end
   end
 
@@ -34,9 +69,9 @@ module Thrasos
     alias g generator
     alias s scope
 
-    def initialize
+    def initialize(parent)
       @generator = Rubinius::Generator.new
-      @scope = Scope.new(@generator)
+      @scope = Scope.new(@generator, parent.scope)
     end
 
     # Receives an AST and returns a generator.
@@ -76,7 +111,7 @@ module Thrasos
     def visit_FunctionExprNode(o)
       # TODO We need to handle arguments eventually ...
       body = o.function_body.value
-      block = self.class.new.generate(body)
+      block = Compiler.new(self).generate(body)
       block.for_block = true
       g.create_block block
     end
@@ -153,7 +188,7 @@ module Thrasos
     end
 
     def visit_ResolveNode(o)
-      s.push_local o.value
+      s.push_variable o.value
     end
 
     private
@@ -166,6 +201,11 @@ module Thrasos
   end
 
   class EvalCompiler < Compiler
+    def initialize
+      @generator = Rubinius::Generator.new
+      @scope = GlobalScope.new(@generator)
+    end
+
     # Automatically return the last expression unless
     # the last expression has no value. In this case,
     # it will return undefined.
