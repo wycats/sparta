@@ -3,10 +3,12 @@ require "rkelly"
 
 module Thrasos
   class Scope
-    attr_reader :variables
+    attr_reader :variables, :generator
+    alias g generator
 
-    def initialize
+    def initialize(generator)
       @variables = []
+      @generator = generator
     end
 
     def slot_for(name)
@@ -17,18 +19,24 @@ module Thrasos
         @variables.size - 1
       end
     end
+
+    def set_local(name)
+      g.set_local slot_for(name)
+    end
+
+    def push_local(name)
+      g.push_local slot_for(name)
+    end
   end
 
   class Compiler < RKelly::Visitors::Visitor
-    attr_reader :generator
+    attr_reader :generator, :scope
     alias g generator
-
-    attr_reader :scope
     alias s scope
 
     def initialize
       @generator = Rubinius::Generator.new
-      @scope = Scope.new
+      @scope = Scope.new(@generator)
     end
 
     def compile(ast)
@@ -100,12 +108,12 @@ module Thrasos
 
     def visit_OpEqualNode(o)
       o.value.accept(self)
-      g.set_local s.slot_for(o.left.value)
+      s.set_local o.left.value
       g.pop
     end
 
     def visit_ResolveNode(o)
-      g.push_local s.slot_for(o.value)
+      s.push_local o.value
     end
   end
 
