@@ -5,6 +5,10 @@ describe "Function" do
     Thrasos.eval(string)
   end
 
+  it "can define functions" do
+    e("(function (){ return 3; })").call.should == 3
+  end
+
   it "can define and call functions" do
     e("(function (){ return 3; })();").should == 3
   end
