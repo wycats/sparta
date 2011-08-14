@@ -51,12 +51,17 @@ module Thrasos
     end
 
     def visit_SourceElementsNode(o)
-      o.value.each { |x| x.accept(self) }
+      last_index = o.value.size - 1
+      o.value.each_with_index do |x, i|
+        @eof = last_index == i
+        x.accept(self)
+      end
       g.ret
     end
 
     def visit_ExpressionStatementNode(o)
       o.value.accept(self)
+      g.pop unless @eof
     end
 
     def visit_AddNode(o)
@@ -109,7 +114,6 @@ module Thrasos
     def visit_OpEqualNode(o)
       o.value.accept(self)
       s.set_local o.left.value
-      g.pop
     end
 
     def visit_ResolveNode(o)
