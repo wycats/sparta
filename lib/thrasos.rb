@@ -29,7 +29,7 @@ module Thrasos
       end
     end
 
-    def set_local(name, depth = 0)
+    def set_local(name)
       g.set_local slot_for(name)
     end
 
@@ -74,9 +74,8 @@ module Thrasos
       @scope = Scope.new(@generator, parent.scope)
     end
 
-    # Receives an AST and returns a generator.
-    def generate(ast)
-      accept ast
+    # Finalizes configuring the generator and returns it.
+    def finalize
       g.local_names = s.variables
       g.local_count = s.variables.size
       g
@@ -84,7 +83,8 @@ module Thrasos
 
     # Receives the AST and returns a Rubinius::CompiledMethod.
     def compile(ast)
-      generate ast
+      accept ast
+      finalize
       rbx_compiler = Rubinius::Compiler.new :encoded_bytecode, :compiled_method
       rbx_compiler.encoder.input generator
       rbx_compiler.run
@@ -114,17 +114,37 @@ module Thrasos
     end
 
     def visit_FunctionExprNode(o)
-      # TODO We need to handle arguments eventually ...
       body = o.function_body.value
-      block = Compiler.new(self).generate(body)
-      block.for_block = true
-      g.create_block block
+
+      # Get a new compiler
+      block = Compiler.new(self)
+
+      # Configures the new generator
+      # TODO Move this to a method on the compiler
+      block.generator.for_block = true
+      block.generator.total_args = o.arguments.size
+      block.generator.cast_for_multi_block_arg unless o.arguments.empty?
+
+      # Visit arguments and then the block
+      o.arguments.each { |x| x.accept(block) }
+      block.accept(body)
+
+      # Invoke the create block instruction
+      # with the generator of the block compiler
+      g.create_block block.finalize
+    end
+
+    def visit_ParameterNode(o)
+      g.shift_array
+      s.set_local o.value
+      g.pop
     end
 
     def visit_FunctionCallNode(o)
-      # TODO Handle arguments
       o.value.accept(self)
-      g.send :call, 0
+      arguments = o.arguments.value
+      arguments.each { |x| x.accept(self) }
+      g.send :call, arguments.size
     end
 
     def visit_ReturnNode(o)
