@@ -2,16 +2,40 @@ require "thrasos/version"
 require "rkelly"
 
 module Thrasos
+  class Scope
+    attr_reader :variables
+
+    def initialize
+      @variables = []
+    end
+
+    def slot_for(name)
+      if existing = @variables.index(name)
+        existing
+      else
+        @variables << name
+        @variables.size - 1
+      end
+    end
+  end
+
   class Compiler < RKelly::Visitors::Visitor
-    attr_accessor :generator
+    attr_reader :generator
     alias g generator
+
+    attr_reader :scope
+    alias s scope
 
     def initialize
       @generator = Rubinius::Generator.new
+      @scope = Scope.new
     end
 
     def compile(ast)
       accept ast
+
+      g.local_names = s.variables
+      g.local_count = s.variables.size
 
       rbx_compiler = Rubinius::Compiler.new :encoded_bytecode, :compiled_method
       rbx_compiler.encoder.input generator
@@ -72,6 +96,16 @@ module Thrasos
 
     def visit_NumberNode(o)
       g.push_int o.value
+    end
+
+    def visit_OpEqualNode(o)
+      o.value.accept(self)
+      g.set_local s.slot_for(o.left.value)
+      g.pop
+    end
+
+    def visit_ResolveNode(o)
+      g.push_local s.slot_for(o.value)
     end
   end
 
