@@ -52,6 +52,24 @@ module Thrasos
       g.send :/, 1
     end
 
+    def visit_UnaryPlusNode(o)
+      o.value.accept(self)
+    end
+
+    def visit_UnaryMinusNode(o)
+      value = o.value
+
+      # If the underlying node is a number value
+      # we can calculate the unary on Ruby land. Yay!
+      if value.is_a?(RKelly::Nodes::NumberNode)
+        g.push_int(-1 * value.value)
+      else
+        value.accept(self)
+        g.push_int -1
+        g.send :*, 1
+      end
+    end
+
     def visit_NumberNode(o)
       g.push_int o.value
     end
@@ -60,6 +78,7 @@ module Thrasos
   def self.eval(string)
     parser = RKelly::Parser.new
     ast    = parser.parse(string)
+
     cm = Compiler.new.compile(ast)
     b  = binding
 

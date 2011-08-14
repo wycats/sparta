@@ -29,4 +29,11 @@ describe "Arithmetic" do
     e("2+4*3-2/1*2").should == 10
     e("(2+4)*(3-2)/1*2").should == 12
   end
+
+  it "can handle unary operators" do
+    e("-1").should == -1
+    e("-(1+2+3)+3").should == -3
+    e("+1").should == 1
+    e("+(1+2+3)-3").should == 3
+  end
 end
