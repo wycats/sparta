@@ -1,10 +1,6 @@
 require "spec_helper"
 
 describe "Arithmetic" do
-  def e(string)
-    Thrasos.eval(string)
-  end
-
   it "can add integers" do
     e("1+1").should == 2
     e("1+1+1").should == 3

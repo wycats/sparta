@@ -1,3 +1,9 @@
 require "bundler/setup"
-require "thrasos"
+require "sparta"
 require "pp"
+
+RSpec.configure do
+  def e(string)
+    Sparta.eval(string)
+  end
+end

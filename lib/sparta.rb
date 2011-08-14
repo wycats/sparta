@@ -1,7 +1,7 @@
-require "thrasos/version"
+require "sparta/version"
 require "rkelly"
 
-module Thrasos
+module Sparta
   class Scope
     attr_reader :variables, :generator
     alias g generator
