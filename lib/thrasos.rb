@@ -20,6 +20,7 @@ module Thrasos
 
     def visit_SourceElementsNode(o)
       o.value.each { |x| x.accept(self) }
+      g.ret
     end
 
     def visit_ExpressionStatementNode(o)
@@ -30,7 +31,25 @@ module Thrasos
       o.left.accept(self)
       o.value.accept(self)
       g.meta_send_op_plus g.find_literal(:+)
-      g.ret
+    end
+
+    def visit_SubtractNode(o)
+      o.left.accept(self)
+      o.value.accept(self)
+      g.meta_send_op_minus g.find_literal(:-)
+    end
+
+    def visit_MultiplyNode(o)
+      o.left.accept(self)
+      o.value.accept(self)
+      g.send :*, 1
+    end
+
+    def visit_DivideNode(o)
+      o.left.accept(self)
+      g.send :to_f, 0
+      o.value.accept(self)
+      g.send :/, 1
     end
 
     def visit_NumberNode(o)
