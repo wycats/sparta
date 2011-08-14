@@ -184,7 +184,7 @@ module Thrasos
 
     def visit_OpEqualNode(o)
       o.value.accept(self)
-      s.set_local o.left.value
+      s.set_variable o.left.value
     end
 
     def visit_ResolveNode(o)
