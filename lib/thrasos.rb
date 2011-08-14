@@ -39,12 +39,15 @@ module Thrasos
       @scope = Scope.new(@generator)
     end
 
-    def compile(ast)
+    def generate(ast)
       accept ast
-
       g.local_names = s.variables
       g.local_count = s.variables.size
+      g
+    end
 
+    def compile(ast)
+      generate ast
       rbx_compiler = Rubinius::Compiler.new :encoded_bytecode, :compiled_method
       rbx_compiler.encoder.input generator
       rbx_compiler.run
@@ -57,6 +60,20 @@ module Thrasos
         x.accept(self)
       end
       g.ret
+    end
+
+    def visit_FunctionExprNode(o)
+      # TODO We need to handle arguments eventually ...
+      body = o.function_body.value
+      block = self.class.new.generate(body)
+      block.for_block = true
+      g.create_block block
+    end
+
+    def visit_FunctionCallNode(o)
+      # TODO Handle arguments
+      o.value.accept(self)
+      g.send :call, 0
     end
 
     def visit_ExpressionStatementNode(o)
