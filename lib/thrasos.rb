@@ -39,6 +39,7 @@ module Thrasos
       @scope = Scope.new(@generator)
     end
 
+    # Receives an AST and returns a generator.
     def generate(ast)
       accept ast
       g.local_names = s.variables
@@ -46,6 +47,7 @@ module Thrasos
       g
     end
 
+    # Receives the AST and returns a Rubinius::CompiledMethod.
     def compile(ast)
       generate ast
       rbx_compiler = Rubinius::Compiler.new :encoded_bytecode, :compiled_method
@@ -54,12 +56,21 @@ module Thrasos
     end
 
     def visit_SourceElementsNode(o)
-      last_index = o.value.size - 1
-      o.value.each_with_index do |x, i|
-        @eof = last_index == i
-        x.accept(self)
+      last_expr = o.value.last
+
+      # Push a ReturnNode to the compiler if we don't have one yet.
+      # TODO We are returning 0 right now, but this needs to be changed to undefined.
+      # TODO Don't modify the tree inside the compiler, we need an ASTWalker to figure this out.
+      if !last_expr || !last_expr.value.is_a?(RKelly::Nodes::ReturnNode)
+        o.value <<
+          RKelly::Nodes::ExpressionStatementNode.new(
+            RKelly::Nodes::ReturnNode.new(
+              RKelly::Nodes::NumberNode.new(0)
+            )
+          )
       end
-      g.ret
+
+      o.value.each { |x| x.accept(self) }
     end
 
     def visit_FunctionExprNode(o)
@@ -76,9 +87,17 @@ module Thrasos
       g.send :call, 0
     end
 
+    def visit_ReturnNode(o)
+      o.value.accept(self)
+      g.ret
+    end
+
     def visit_ExpressionStatementNode(o)
       o.value.accept(self)
-      g.pop unless @eof
+      # At the end of each expression we pop the value out of the stack.
+      # Except if the node is an specific node that do not push items
+      # to the stack (for example return, break and friends).
+      g.pop unless no_value_node?(o.value)
     end
 
     def visit_AddNode(o)
@@ -136,13 +155,34 @@ module Thrasos
     def visit_ResolveNode(o)
       s.push_local o.value
     end
+
+    private
+
+    # Nodes that do not push value to the stack.
+    # For example return, break and friends.
+    def no_value_node?(o)
+      o.is_a?(RKelly::Nodes::ReturnNode)
+    end
+  end
+
+  class EvalCompiler < Compiler
+    # Automatically return the last expression unless
+    # the last expression has no value. In this case,
+    # it will return undefined.
+    def visit_SourceElementsNode(o)
+      last_expr = o.value.last
+      if last_expr && !no_value_node?(last_expr.value)
+        last_expr.value = RKelly::Nodes::ReturnNode.new(last_expr.value)
+      end
+      super
+    end
   end
 
   def self.eval(string)
     parser = RKelly::Parser.new
     ast    = parser.parse(string)
 
-    cm = Compiler.new.compile(ast)
+    cm = EvalCompiler.new.compile(ast)
     b  = binding
 
     cm.scope = b.static_scope

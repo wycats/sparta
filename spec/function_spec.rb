@@ -6,6 +6,6 @@ describe "Function" do
   end
 
   it "can define and call functions" do
-    e("(function (){ 3; })();").should == 3
+    e("(function (){ return 3; })();").should == 3
   end
 end
