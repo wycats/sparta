@@ -156,6 +156,24 @@ module Sparta
         s.push_variable o.value
       end
 
+      def visit_DotAccessorNode(o)
+        super
+        g.push_literal o.accessor.to_sym
+        g.send :spec_Get, 1
+      end
+
+      def visit_ObjectLiteralNode(o)
+        g.push_const :LiteralObject
+        g.send :allocate, 0
+        super
+      end
+
+      def visit_PropertyNode(o)
+        g.push_literal o.name.to_sym
+        super
+        g.send :spec_Put, 2
+      end
+
       private
 
       # Nodes that do not push value to the stack.

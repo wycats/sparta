@@ -1,6 +1,7 @@
 require "rkelly"
 require "sparta/version"
 require "sparta/compilers/eval_compiler"
+require "sparta/runtime/object"
 
 module Sparta
   def self.eval(string)
@@ -8,7 +9,7 @@ module Sparta
     ast    = parser.parse(string)
 
     cm = Sparta::Compilers::EvalCompiler.new.compile(ast)
-    b  = binding
+    b  = Sparta::Runtime.runtime_binding
 
     cm.scope = b.static_scope
     cm.name  = :script
