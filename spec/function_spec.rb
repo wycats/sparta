@@ -28,4 +28,10 @@ describe "Function" do
     e("(function(x, y) { return x + y; })(45, 2)").should == 47
     e("var x = 1; (function(x, y) { return x + y; })(45, 2) + x").should == 48
   end
+
+  it "supports reusing variables across eval" do
+    env = Sparta::Environment.new
+    env.eval("x = 1")
+    env.eval("x").should == 1
+  end
 end

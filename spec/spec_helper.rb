@@ -4,6 +4,6 @@ require "pp"
 
 RSpec.configure do
   def e(string)
-    Sparta.eval(string)
+    Sparta::Environment.new.eval(string)
   end
 end

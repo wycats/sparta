@@ -14,16 +14,10 @@ module Sparta
         @scope = Sparta::Scopes::Scope.new(@generator, parent.scope)
       end
 
-      # Finalizes configuring the generator and returns it.
-      def finalize
-        g.local_names = s.variables
-        g.local_count = s.variables.size
-        g
-      end
-
       # Receives the AST and returns a Rubinius::CompiledMethod.
       def compile(ast)
         accept ast
+        debug if ENV["DEBUG_COMPILER"]
         finalize
         rbx_compiler = Rubinius::Compiler.new :encoded_bytecode, :compiled_method
         rbx_compiler.encoder.input generator
@@ -174,7 +168,24 @@ module Sparta
         g.send :spec_Put, 2
       end
 
-      private
+      protected
+
+      # Finalizes configuring the generator and returns it.
+      def finalize
+        g.local_names = s.variables
+        g.local_count = s.variables.size
+        g
+      end
+
+      def debug
+        ip = 0
+        puts
+        while instruction = g.stream[ip]
+          instruct = Rubinius::InstructionSet[instruction]
+          ip += instruct.size
+          puts instruct.name
+        end
+      end
 
       # Nodes that do not push value to the stack.
       # For example return, break and friends.

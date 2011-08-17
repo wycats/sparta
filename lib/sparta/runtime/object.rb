@@ -4,19 +4,7 @@ module Sparta
       binding
     end
 
-    class Descriptor
-      attr_accessor :spec_Value, :spec_Writable, :spec_Enumerable, :spec_Configurable
-    end
-
-    # Create a shared literal descriptor to use for new properties in
-    # an object literal
-    LITERAL_DESCRIPTOR = Descriptor.new
-    LITERAL_DESCRIPTOR.spec_Writable = true
-    LITERAL_DESCRIPTOR.spec_Enumerable = true
-    LITERAL_DESCRIPTOR.spec_Configurable = true
-
     class Object < Rubinius::LookupTable
-
       attr_accessor :spec_Prototype, :spec_Class
 
       def spec_Get(name)
@@ -26,6 +14,10 @@ module Sparta
       def spec_Put(name, object, throw=false)
         self[name] = object
         self
+      end
+
+      def internal_Put(name, object)
+        self[name] = object
       end
 
       def spec_CanPut(name)
@@ -62,6 +54,9 @@ module Sparta
 
     OBJECT_PROTOTYPE = Runtime::Object.new
 
+    class Window < Object
+    end
+
     class LiteralObject < Object
       thunk_method :spec_Prototype, OBJECT_PROTOTYPE
       thunk_method :spec_Class, "Object"
@@ -69,7 +64,7 @@ module Sparta
     end
 
     class PromotedPrimitive < Object
-      attr_accessor :internal_PrimitiveValue
+      attr_accessor :spec_PrimitiveValue
     end
   end
 end
