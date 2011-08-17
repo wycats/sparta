@@ -150,6 +150,11 @@ module Sparta
         g.push_int o.value
       end
 
+      def visit_StringNode(o)
+        set_line(o)
+        g.push_literal o.value[1...-1]
+      end
+
       def visit_OpEqualNode(o)
         o.value.accept(self)
         set_line(o)
