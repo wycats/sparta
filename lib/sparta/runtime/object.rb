@@ -12,12 +12,21 @@ module Sparta
       end
 
       def spec_Put(name, object, throw=false)
-        self[name] = object
-        self
       end
 
       def internal_Put(name, object)
         self[name] = object
+      end
+
+      def internal_LiteralPut(name, object)
+        self[name] = object
+
+        # this method is called repeatedly to create new
+        # properties for a literal. Return self so we
+        # can just call internal_LiteralPut again without
+        # having to make sure the object we're creating
+        # is on the stack using bytecode.
+        self
       end
 
       def spec_CanPut(name)

@@ -48,6 +48,7 @@ module Sparta
       end
 
       def visit_FunctionExprNode(o)
+        set_line(o)
         body = o.function_body.value
 
         # Get a new compiler
@@ -69,6 +70,7 @@ module Sparta
       end
 
       def visit_ParameterNode(o)
+        set_line(o)
         g.shift_array
         s.set_local o.value
         g.pop
@@ -76,6 +78,7 @@ module Sparta
 
       def visit_FunctionCallNode(o)
         o.value.accept(self)
+        set_line(o)
         arguments = o.arguments.value
         arguments.each { |x| x.accept(self) }
         g.send :call, arguments.size
@@ -96,24 +99,28 @@ module Sparta
 
       def visit_AddNode(o)
         o.left.accept(self)
+        set_line(o)
         o.value.accept(self)
         g.meta_send_op_plus g.find_literal(:+)
       end
 
       def visit_SubtractNode(o)
         o.left.accept(self)
+        set_line(o)
         o.value.accept(self)
         g.meta_send_op_minus g.find_literal(:-)
       end
 
       def visit_MultiplyNode(o)
         o.left.accept(self)
+        set_line(o)
         o.value.accept(self)
         g.send :*, 1
       end
 
       def visit_DivideNode(o)
         o.left.accept(self)
+        set_line(o)
         g.send :to_f, 0
         o.value.accept(self)
         g.send :/, 1
@@ -124,6 +131,7 @@ module Sparta
       end
 
       def visit_UnaryMinusNode(o)
+        set_line(o)
         value = o.value
 
         # If the underlying node is a number value
@@ -138,37 +146,47 @@ module Sparta
       end
 
       def visit_NumberNode(o)
+        set_line(o)
         g.push_int o.value
       end
 
       def visit_OpEqualNode(o)
         o.value.accept(self)
+        set_line(o)
         s.set_variable o.left.value
       end
 
       def visit_ResolveNode(o)
+        set_line(o)
         s.push_variable o.value
       end
 
       def visit_DotAccessorNode(o)
         super
+        set_line(o)
         g.push_literal o.accessor.to_sym
         g.send :spec_Get, 1
       end
 
       def visit_ObjectLiteralNode(o)
+        set_line(o)
         g.push_const :LiteralObject
         g.send :allocate, 0
         super
       end
 
       def visit_PropertyNode(o)
+        set_line(o)
         g.push_literal o.name.to_sym
         super
-        g.send :spec_Put, 2
+        g.send :internal_LiteralPut, 2
       end
 
       protected
+
+      def set_line(o)
+        g.set_line o.line if o.line
+      end
 
       # Finalizes configuring the generator and returns it.
       def finalize
