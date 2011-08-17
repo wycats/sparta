@@ -17,7 +17,7 @@ module Sparta
       cm.scope = b.static_scope
       cm.name  = :script
 
-      script = Rubinius::CompiledMethod::Script.new(cm, "(eval)", true)
+      script = Rubinius::CompiledMethod::Script.new(cm, "(javascript)", true)
       script.eval_source = string
 
       cm.scope.script = script

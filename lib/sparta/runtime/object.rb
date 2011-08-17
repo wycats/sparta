@@ -25,7 +25,7 @@ module Sparta
         # properties for a literal. Return self so we
         # can just call internal_LiteralPut again without
         # having to make sure the object we're creating
-        # is on the stack using bytecode.
+        # is on the stack using bytecode. 
         self
       end
 

@@ -29,6 +29,17 @@ describe "Function" do
     e("var x = 1; (function(x, y) { return x + y; })(45, 2) + x").should == 48
   end
 
+  it "can handle backtraces" do
+    begin
+      e("x = \nf()")
+      raise "flunk"
+    rescue Exception => e
+      e.awesome_backtrace.find do |loc|
+        loc.file == "(javascript)" && loc.line == 2
+      end.should be
+    end
+  end
+
   it "supports reusing variables across eval" do
     env = Sparta::Environment.new
     env.eval("x = 1")

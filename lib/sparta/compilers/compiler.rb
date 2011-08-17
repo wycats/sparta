@@ -192,6 +192,7 @@ module Sparta
       def finalize
         g.local_names = s.variables
         g.local_count = s.variables.size
+        g.close
         g
       end
 
