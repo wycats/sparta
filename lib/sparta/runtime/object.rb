@@ -14,12 +14,18 @@ module Sparta
         object
       end
 
+      def function(name, block=name)
+        block = method(block) if block.is_a?(Symbol)
+
+        self[name] = Function.new(block)
+      end
+
       def to_hash
         Hash[*keys.zip(values).flatten]
       end
 
       def inspect
-        "#<#{object_id.to_s(16)} #{to_hash.inspect}>"
+        "#<#{spec_Class} #{object_id.to_s(16)} #{to_hash.inspect}>"
       end
 
       def spec_Get(name)
@@ -84,9 +90,14 @@ module Sparta
     OBJECT_PROTOTYPE = Runtime::Object.new
 
     class Window < Object
+      def initialize
+        function :p
+      end
     end
 
     class Function < Object
+      thunk_method :spec_Class, "Function"
+
       def initialize(block)
         @block = block
       end
