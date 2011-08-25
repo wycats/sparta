@@ -4,9 +4,10 @@ require "sparta/scopes/global_scope"
 module Sparta
   module Compilers
     class EvalCompiler < Compiler
-      def initialize
+      def initialize(static_scope = nil)
         @generator = Rubinius::Generator.new
         @scope = Sparta::Scopes::GlobalScope.new(@generator)
+        @static_scope = static_scope
       end
 
       # Automatically return the last expression unless

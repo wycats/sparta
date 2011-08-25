@@ -7,11 +7,31 @@ module Sparta
     class Object < Rubinius::LookupTable
       attr_accessor :spec_Prototype, :spec_Class
 
+      def self.with_constructor(constructor)
+        object = new
+        object.spec_Prototype = constructor.spec_Get(:prototype)
+        constructor.call_with(object)
+        object
+      end
+
+      def to_hash
+        Hash[*keys.zip(values).flatten]
+      end
+
+      def inspect
+        "#<#{object_id.to_s(16)} #{to_hash.inspect}>"
+      end
+
       def spec_Get(name)
-        self[name]
+        if value = self[name]
+          value
+        elsif prototype = spec_Prototype
+          prototype.spec_Get(name)
+        end
       end
 
       def spec_Put(name, object, throw=false)
+        self[name] = object
       end
 
       def internal_Put(name, object)
@@ -64,6 +84,20 @@ module Sparta
     OBJECT_PROTOTYPE = Runtime::Object.new
 
     class Window < Object
+    end
+
+    class Function < Object
+      def initialize(block)
+        @block = block
+      end
+
+      def call(*args)
+        @block.call(*args)
+      end
+
+      def call_with(this, *args)
+        @block.call_under(this, @block.static_scope)
+      end
     end
 
     class LiteralObject < Object

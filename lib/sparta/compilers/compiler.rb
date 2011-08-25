@@ -59,14 +59,18 @@ module Sparta
         block.generator.for_block = true
         block.generator.total_args = o.arguments.size
         block.generator.cast_for_multi_block_arg unless o.arguments.empty?
+        block.generator.set_line o.line if o.line
 
         # Visit arguments and then the block
         o.arguments.each { |x| x.accept(block) }
         block.accept(body)
 
+        g.push_const :Function
+
         # Invoke the create block instruction
         # with the generator of the block compiler
         g.create_block block.finalize
+        g.send :new, 1
       end
 
       def visit_ParameterNode(o)
@@ -156,9 +160,22 @@ module Sparta
       end
 
       def visit_OpEqualNode(o)
-        o.value.accept(self)
         set_line(o)
-        s.set_variable o.left.value
+
+        if o.left.is_a?(RKelly::Nodes::ResolveNode)
+          o.value.accept(self)
+          s.set_variable o.left.value
+        elsif o.left.is_a?(RKelly::Nodes::DotAccessorNode)
+          o.left.value.accept(self)
+          g.push_literal o.left.accessor.to_sym
+          o.value.accept(self)
+          g.send :internal_Put, 2
+        end
+      end
+
+      def visit_ThisNode(o)
+        set_line(o)
+        g.push_self
       end
 
       def visit_ResolveNode(o)
@@ -185,6 +202,13 @@ module Sparta
         g.push_literal o.name.to_sym
         super
         g.send :internal_LiteralPut, 2
+      end
+
+      def visit_NewExprNode(o)
+        set_line(o)
+        g.push_const :Object
+        super
+        g.send :with_constructor, 1
       end
 
       protected
