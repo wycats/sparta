@@ -4,6 +4,19 @@ module Sparta
       binding
     end
 
+    module Utils
+      def self.brackets(object, name)
+        case object
+        when Array
+          object[name]
+        when Object
+          object.spec_Get(name)
+        else
+          object.send(name)
+        end
+      end
+    end
+
     class Object < Rubinius::LookupTable
       attr_accessor :spec_Prototype, :spec_Class
 

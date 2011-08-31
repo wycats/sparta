@@ -197,11 +197,25 @@ module Sparta
         super
       end
 
+      def visit_BracketAccessorNode(o)
+        set_line(o)
+        g.push_const :Utils
+        o.value.accept(self)
+        o.accessor.accept(self)
+        g.send :brackets, 2
+      end
+
       def visit_PropertyNode(o)
         set_line(o)
         g.push_literal o.name.to_sym
         super
         g.send :internal_LiteralPut, 2
+      end
+
+      def visit_ArrayNode(o)
+        set_line(o)
+        super
+        g.make_array o.value.size
       end
 
       def visit_NewExprNode(o)
