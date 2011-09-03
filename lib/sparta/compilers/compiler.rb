@@ -202,20 +202,34 @@ module Sparta
         g.push_const :Utils
         o.value.accept(self)
         o.accessor.accept(self)
-        g.send :brackets, 2
+
+        if o.accessor.is_a?(NumberNode)
+          g.send :index_Get, 1
+        else
+          g.send :brackets, 2
+        end
       end
 
       def visit_PropertyNode(o)
         set_line(o)
-        g.push_literal o.name.to_sym
+
+        if o.name =~ /^['"]/
+          name = o.name[1...-1].to_sym
+        else
+          name = o.name.to_sym
+        end
+
+        g.push_literal name
         super
         g.send :internal_LiteralPut, 2
       end
 
       def visit_ArrayNode(o)
         set_line(o)
+        g.push_const :Array
         super
         g.make_array o.value.size
+        g.send :new, 1
       end
 
       def visit_NewExprNode(o)

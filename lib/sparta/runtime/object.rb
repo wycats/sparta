@@ -6,14 +6,15 @@ module Sparta
 
     module Utils
       def self.brackets(object, name)
-        case object
-        when Array
-          object[name]
-        when Object
-          object.spec_Get(name)
+        if object.respond_to?(:coerce_Get)
+          object.coerce_Get(name)
         else
           object.send(name)
         end
+      end
+
+      def self.spec_ToString(object)
+        object.to_s
       end
     end
 
@@ -47,6 +48,15 @@ module Sparta
         elsif prototype = spec_Prototype
           prototype.spec_Get(name)
         end
+      end
+
+      def coerce_Get(obj)
+        name = Utils.spec_ToString(obj)
+        spec_Get(name)
+      end
+
+      def index_Get(index)
+        spec_Get(Utils.spec_ToString(index))
       end
 
       def spec_Put(name, object, throw=false)
@@ -101,6 +111,25 @@ module Sparta
     end
 
     OBJECT_PROTOTYPE = Runtime::Object.new
+    ARRAY_PROTOTYPE  = Runtime::Object.new
+
+    class Array < Object
+      thunk_method :spec_Prototype, ARRAY_PROTOTYPE
+      thunk_method :spec_Class, "Array"
+      thunk_method :spec_Extensible, true
+
+      def initialize(array)
+        @array = array
+      end
+
+      def index_Get(index)
+        @array[index]
+      end
+
+      def to_a
+        @array
+      end
+    end
 
     class Window < Object
       def initialize
