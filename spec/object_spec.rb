@@ -29,12 +29,25 @@ describe "Object Literals" do
   end
 
   describe "hasOwnProperty" do
+    it "should return true if the object hasOwnProperty" do
+      e("x = { a: 1 }; x.hasOwnProperty('a')").should == true
+      e("x = { a: 1 }; x.hasOwnProperty('b')").should == false
+    end
 
+    it "should return false if the object has the property only on its prototype" do
+      e("x = function() {}; x.prototype = { a: 1 }; y = new x; y.hasOwnProperty('a')").should == false
+    end
   end
 
   describe "delete key" do
     it "should delete the key if it exists on the object" do
       e("x = { a: 1 }; delete x.a; x.a").should == undefined
+      e("x = { a: 1 }; delete x['a']; x.a").should == undefined
+      e("x = { a: 1 }; y = 'a'; delete x[y]; x.a").should == undefined
+    end
+
+    it "should not delete the key if it only exists on the prototype" do
+      e("x = function() {}; x.prototype = { a: 1 }; y = new x; delete y.a; y.a").should == 1
     end
   end
 end

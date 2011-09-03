@@ -80,12 +80,23 @@ module Sparta
         g.pop
       end
 
+      def visit_ArgumentsNode(o)
+        o.value.each { |x| x.accept(self) }
+        o.value.size
+      end
+
       def visit_FunctionCallNode(o)
         o.value.accept(self)
         set_line(o)
-        arguments = o.arguments.value
-        arguments.each { |x| x.accept(self) }
-        g.send :call, arguments.size
+
+        if o.value.is_a?(RKelly::Nodes::ResolveNode)
+          size = o.arguments.accept(self)
+          g.send :call, size
+        elsif o.value.is_a?(RKelly::Nodes::DotAccessorNode)
+          o.value.value.accept(self)
+          size = o.arguments.accept(self)
+          g.send :call_with, size + 1
+        end
       end
 
       def visit_ReturnNode(o)
@@ -94,7 +105,10 @@ module Sparta
       end
 
       def visit_ExpressionStatementNode(o)
+        set_line(o)
+
         o.value.accept(self)
+
         # At the end of each expression we pop the value out of the stack.
         # Except if the node is an specific node that do not push items
         # to the stack (for example return, break and friends).
@@ -190,6 +204,11 @@ module Sparta
         elsif o.value.is_a?(RKelly::Nodes::DotAccessorNode)
           o.value.value.accept(self)
           g.push_literal o.value.accessor.to_sym
+          g.send :delete_property, 1
+        elsif o.value.is_a?(RKelly::Nodes::BracketAccessorNode)
+          o.value.value.accept(self)
+          o.value.accessor.accept(self)
+          g.send :to_sym, 0
           g.send :delete_property, 1
         end
       end

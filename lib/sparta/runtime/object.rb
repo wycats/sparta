@@ -150,6 +150,10 @@ module Sparta
     class Function < Object
       thunk_method :js_class, "Function"
 
+      def self.for_block(&block)
+        new(block.block)
+      end
+
       def initialize(block)
         @block = block
       end
@@ -159,8 +163,12 @@ module Sparta
       end
 
       def call_with(this, *args)
-        @block.call_under(this, @block.static_scope)
+        @block.call_under(this, @block.static_scope, *args)
       end
+    end
+
+    OBJECT_PROTOTYPE[:hasOwnProperty] = Function.for_block do |key|
+      key?(key.to_sym)
     end
 
     class LiteralObject < Object
