@@ -6,6 +6,7 @@ module Sparta
     def initialize
       @window = Sparta::Runtime::Window.new
       @window[:eval] = method(:eval)
+      @window[:window] = @window
     end
 
     # this eval is called from inside JS
@@ -15,6 +16,7 @@ module Sparta
 
       cm = Sparta::Compilers::EvalCompiler.new.compile(ast)
       cm.scope = Rubinius::StaticScope.new(Sparta::Runtime)
+      cm.scope.const_set :JS_WINDOW, @window
       cm.name  = :__script__
       cm.file  = :"(javascript)"
 
@@ -40,6 +42,7 @@ module Sparta
 
       cm = Sparta::Compilers::EvalCompiler.new.compile(ast)
       cm.scope = Rubinius::StaticScope.new(Sparta::Runtime)
+      cm.scope.const_set :JS_WINDOW, @window
       cm.name  = :__script__
       cm.file  = :"(javascript)"
 

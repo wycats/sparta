@@ -89,10 +89,12 @@ module Sparta
         o.value.accept(self)
         set_line(o)
 
-        if o.value.is_a?(RKelly::Nodes::ResolveNode)
+        case o.value
+        when RKelly::Nodes::ResolveNode, RKelly::Nodes::FunctionExprNode
+          s.push_variable :window
           size = o.arguments.accept(self)
-          g.send :call, size
-        elsif o.value.is_a?(RKelly::Nodes::DotAccessorNode)
+          g.send :call_with, size + 1
+        when RKelly::Nodes::DotAccessorNode
           o.value.value.accept(self)
           size = o.arguments.accept(self)
           g.send :call_with, size + 1
