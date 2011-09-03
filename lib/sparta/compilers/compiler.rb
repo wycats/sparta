@@ -169,7 +169,7 @@ module Sparta
           o.left.value.accept(self)
           g.push_literal o.left.accessor.to_sym
           o.value.accept(self)
-          g.send :internal_Put, 2
+          g.send :put, 2
         end
       end
 
@@ -187,7 +187,13 @@ module Sparta
         super
         set_line(o)
         g.push_literal o.accessor.to_sym
-        g.send :spec_Get, 1
+        g.send :get, 1
+      end
+
+      def visit_InNode(o)
+        o.value.accept(self)
+        o.left.accept(self)
+        g.send :has_property?, 1
       end
 
       def visit_ObjectLiteralNode(o)
@@ -204,7 +210,7 @@ module Sparta
         o.accessor.accept(self)
 
         if o.accessor.is_a?(NumberNode)
-          g.send :index_Get, 1
+          g.send :get_index, 1
         else
           g.send :brackets, 2
         end
@@ -221,7 +227,7 @@ module Sparta
 
         g.push_literal name
         super
-        g.send :internal_LiteralPut, 2
+        g.send :literal_put, 2
       end
 
       def visit_ArrayNode(o)

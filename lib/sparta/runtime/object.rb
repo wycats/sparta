@@ -5,25 +5,34 @@ module Sparta
     end
 
     module Utils
+      def self.ToString(object)
+        object.to_s
+      end
+
       def self.brackets(object, name)
-        if object.respond_to?(:coerce_Get)
-          object.coerce_Get(name)
+        name = ToString(name)
+
+        if object.is_a?(Object)
+          object.get(name)
         else
           object.send(name)
         end
       end
-
-      def self.spec_ToString(object)
-        object.to_s
-      end
     end
 
+    # Object protocol:
+    #
+    # get(name<Symbol>)        => object
+    # get_index(index<Fixnum>) => object
+    # put(name<Symbol>, object<Object>)
+    #
+
     class Object < Rubinius::LookupTable
-      attr_accessor :spec_Prototype, :spec_Class
+      attr_accessor :prototype, :js_class
 
       def self.with_constructor(constructor)
         object = new
-        object.spec_Prototype = constructor.spec_Get(:prototype)
+        object.prototype = constructor.get(:prototype)
         constructor.call_with(object)
         object
       end
@@ -39,74 +48,64 @@ module Sparta
       end
 
       def inspect
-        "#<#{spec_Class} #{object_id.to_s(16)} #{to_hash.inspect}>"
+        "#<#{js_class} #{object_id.to_s(16)} #{to_hash.inspect}>"
       end
 
-      def spec_Get(name)
+      def get(name)
         if value = self[name]
           value
-        elsif prototype = spec_Prototype
-          prototype.spec_Get(name)
+        elsif proto = prototype
+          proto.get(name)
         end
       end
 
-      def coerce_Get(obj)
-        name = Utils.spec_ToString(obj)
-        spec_Get(name)
+      def get_index(index)
+        get(Utils.ToString(index))
       end
 
-      def index_Get(index)
-        spec_Get(Utils.spec_ToString(index))
-      end
-
-      def spec_Put(name, object, throw=false)
+      def put(name, object, throw=false)
         self[name] = object
       end
 
-      def internal_Put(name, object)
-        self[name] = object
-      end
-
-      def internal_LiteralPut(name, object)
-        self[name] = object
+      def literal_put(name, object)
+        put(name, object)
 
         # this method is called repeatedly to create new
         # properties for a literal. Return self so we
-        # can just call internal_LiteralPut again without
+        # can just call literal_put again without
         # having to make sure the object we're creating
         # is on the stack using bytecode. 
         self
       end
 
-      def spec_CanPut(name)
+      def can_put?(name)
         true
       end
 
-      def spec_HasProperty(name)
-        self.key?(name)
+      def has_property?(name)
+        if result = key?(name)
+          result
+        elsif proto = prototype
+          proto.has_property?(name)
+        else
+          false
+        end
       end
 
-      def spec_Delete(name)
-        self.delete(name)
+      def delete_property(name)
+        delete(name)
       end
 
-      def spec_DefaultValue(hint)
+      def default_value(hint)
         # TODO: This returns stuff like [object Object] which
         # is used by implementations to determine the true type
       end
 
-      def spec_DefineOwnProperty(name, descriptor, throw=false)
-        # TODO: This algorithm is actually pretty complicated.
-        # For now, treat this like a simple [[Put]] operation.
-
-        self[name] = descriptor.spec_Value
-      end
-
       def self.empty_object
         obj                 = allocate
-        obj.spec_Prototype  = OBJECT_PROTOTYPE
-        obj.spec_Class      = "Object"
-        obj.spec_Extensible = true
+        obj.prototype  = OBJECT_PROTOTYPE
+        obj.js_class      = "Object"
+        obj.extensible = true
       end
     end
 
@@ -114,15 +113,15 @@ module Sparta
     ARRAY_PROTOTYPE  = Runtime::Object.new
 
     class Array < Object
-      thunk_method :spec_Prototype, ARRAY_PROTOTYPE
-      thunk_method :spec_Class, "Array"
-      thunk_method :spec_Extensible, true
+      thunk_method :prototype, ARRAY_PROTOTYPE
+      thunk_method :js_class, "Array"
+      thunk_method :extensible, true
 
       def initialize(array)
         @array = array
       end
 
-      def index_Get(index)
+      def get_index(index)
         @array[index]
       end
 
@@ -138,7 +137,7 @@ module Sparta
     end
 
     class Function < Object
-      thunk_method :spec_Class, "Function"
+      thunk_method :js_class, "Function"
 
       def initialize(block)
         @block = block
@@ -154,13 +153,13 @@ module Sparta
     end
 
     class LiteralObject < Object
-      thunk_method :spec_Prototype, OBJECT_PROTOTYPE
-      thunk_method :spec_Class, "Object"
-      thunk_method :spec_Extensible, true
+      thunk_method :prototype, OBJECT_PROTOTYPE
+      thunk_method :js_class, "Object"
+      thunk_method :extensible, true
     end
 
     class PromotedPrimitive < Object
-      attr_accessor :spec_PrimitiveValue
+      attr_accessor :primitive_value
     end
   end
 end

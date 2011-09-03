@@ -15,6 +15,18 @@ describe "Object Literals" do
     e("x = function() {}; x.prototype = { a: 1 }; y = new x; y.b = 2; y.a + y.b").should == 3
     e("x = function() { this.c = 5; }; x.prototype = { a: 1 }; y = new x; y.b = 2; y.a + y.b + y.c").should == 8
   end
+
+  describe "foo in bar" do
+    it "should return true if the object hasOwnProperty of the key" do
+      e("x = { a: 1 }; 'a' in x").should == true
+      e("x = { a: 1 }; 'b' in x").should == false
+    end
+
+    it "should return true if the property exists on the prototype" do
+      e("x = function() {}; x.prototype = { a: 1 }; 'a' in new x").should == true
+      e("x = function() {}; x.prototype = { a: 1 }; 'b' in new x").should == false
+    end
+  end
 end
 
 describe "Array Literals" do

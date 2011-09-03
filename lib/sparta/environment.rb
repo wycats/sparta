@@ -43,6 +43,8 @@ module Sparta
       cm.name  = :__script__
       cm.file  = :"(javascript)"
 
+      #puts cm.decode
+
       script = Rubinius::CompiledMethod::Script.new(cm)
       cm.scope.script = script
 
