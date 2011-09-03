@@ -29,6 +29,10 @@ describe "Function" do
     e("var x = 1; (function(x, y) { return x + y; })(45, 2) + x").should == 48
   end
 
+  it "defaults to setting 'this' to the global object" do
+    e("x = 47; (function() { return this.x; })()").should == 47
+  end
+
   it "can handle backtraces" do
     begin
       e("x = \nf()")
