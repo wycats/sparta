@@ -173,6 +173,26 @@ module Sparta
         g.push_literal o.value[1...-1]
       end
 
+      def visit_TrueNode(o)
+        set_line(o)
+        g.push_true
+      end
+
+      def visit_FalseNode(o)
+        set_line(o)
+        g.push_false
+      end
+
+      def visit_NullNode(o)
+        set_line(o)
+        g.push_nil
+      end
+
+      def visit_UndefinedNode(o)
+        set_line(o)
+        g.push_undef
+      end
+
       def visit_OpEqualNode(o)
         set_line(o)
 
