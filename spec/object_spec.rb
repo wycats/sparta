@@ -27,11 +27,22 @@ describe "Object Literals" do
       e("x = function() {}; x.prototype = { a: 1 }; 'b' in new x").should == false
     end
   end
+
+  describe "hasOwnProperty" do
+
+  end
+
+  describe "delete key" do
+    it "should delete the key if it exists on the object" do
+      e("x = { a: 1 }; delete x.a; x.a").should == undefined
+    end
+  end
 end
 
 describe "Array Literals" do
   it "creates a simple Array" do
     e("x = [1,2,3]").to_a.should == [1,2,3]
     e("x = [1,2,3]; x[1]").should == 2
+    e("x = [1,2,3]; x[5]").should == undefined
   end
 end

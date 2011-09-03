@@ -183,6 +183,17 @@ module Sparta
         s.push_variable o.value
       end
 
+      def visit_DeleteNode(o)
+        set_line(o)
+        if o.value.is_a?(RKelly::Nodes::ResolveNode)
+          # TODO: deal with delete x
+        elsif o.value.is_a?(RKelly::Nodes::DotAccessorNode)
+          o.value.value.accept(self)
+          g.push_literal o.value.accessor.to_sym
+          g.send :delete_property, 1
+        end
+      end
+
       def visit_DotAccessorNode(o)
         super
         set_line(o)

@@ -37,6 +37,11 @@ module Sparta
         object
       end
 
+      dynamic_method(:undefined) do |g|
+        g.push_undef
+        g.ret
+      end
+
       def function(name, block=name)
         block = method(block) if block.is_a?(Symbol)
 
@@ -56,6 +61,8 @@ module Sparta
           value
         elsif proto = prototype
           proto.get(name)
+        else
+          undefined
         end
       end
 
@@ -122,7 +129,11 @@ module Sparta
       end
 
       def get_index(index)
-        @array[index]
+        if index >= @array.size
+          undefined
+        else
+          @array[index]
+        end
       end
 
       def to_a
