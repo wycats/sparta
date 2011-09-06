@@ -102,8 +102,11 @@ module Sparta
           size = o.arguments.accept(self)
           g.send :call_with, size + 1
         when RKelly::Nodes::DotAccessorNode
+          # TODO: do not evaluate o.value.value twice...
           o.value.value.accept(self)
           size = o.arguments.accept(self)
+
+          # TODO: Deal with undefined
           g.send :call_with, size + 1
         end
       end
@@ -174,7 +177,12 @@ module Sparta
 
       def visit_NumberNode(o)
         set_line(o)
-        g.push_int o.value
+
+        if o.value.is_a?(Fixnum)
+          g.push_int o.value
+        else
+          g.push_literal o.value
+        end
       end
 
       def visit_StringNode(o)

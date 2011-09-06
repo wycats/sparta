@@ -7,6 +7,10 @@ module Sparta
       @window = Sparta::Runtime::Window.new
       @window[:eval] = method(:eval)
       @window[:window] = @window
+      @window[:Object] = Sparta::Runtime::Function.for_block {}
+
+      # TODO: Have a better way of setting up the initial global scope
+      @window[:Object][:prototype] = Sparta::Runtime::OBJECT_PROTOTYPE.dup
     end
 
     # this eval is called from inside JS

@@ -142,8 +142,9 @@ module Sparta
       end
     end
 
-    OBJECT_PROTOTYPE = Runtime::Object.new
-    ARRAY_PROTOTYPE  = Runtime::Object.new
+    OBJECT_PROTOTYPE   = Runtime::Object.new
+    ARRAY_PROTOTYPE    = Runtime::Object.new
+    FUNCTION_PROTOTYPE = Runtime::Object.new
 
     class Array < Object
       thunk_method :prototype, ARRAY_PROTOTYPE
@@ -174,6 +175,7 @@ module Sparta
     end
 
     class Function < Object
+      thunk_method :prototype, FUNCTION_PROTOTYPE
       thunk_method :js_class, "Function"
 
       def self.for_block(&block)
@@ -195,6 +197,27 @@ module Sparta
 
     OBJECT_PROTOTYPE[:hasOwnProperty] = Function.for_block do |key|
       key?(key.to_sym)
+    end
+
+    OBJECT_PROTOTYPE[:toString] = Function.for_block do
+      case self
+      when undefined
+        "[object Undefined]"
+      when nil
+        "[object Null]"
+      when String
+        "[object String]"
+      when TrueClass, FalseClass
+        "[object Boolean]"
+      when Numeric
+        "[object Number]"
+      else
+        "[object #{self.js_class}]"
+      end
+    end
+
+    FUNCTION_PROTOTYPE[:call] = Function.for_block do |this, *args|
+      call_with(this, *args)
     end
 
     class LiteralObject < Object
