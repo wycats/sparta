@@ -128,7 +128,7 @@ module RKelly
       end
 
       def visit_NullNode(o)
-        say_status "Null"
+        say_status "Null", ""
       end
 
       def visit_FunctionDeclNode(o)
