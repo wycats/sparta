@@ -134,6 +134,13 @@ module Sparta
         g.pop unless no_value_node?(o.value)
       end
 
+      def visit_LogicalNotNode(o)
+        g.push_const :Utils
+        set_line(o)
+        super
+        g.send :logical_not, 1
+      end
+
       def visit_AddNode(o)
         o.left.accept(self)
         set_line(o)

@@ -25,6 +25,19 @@ module Sparta
         end
       end
 
+      def self.logical_not(val)
+        case val
+        when Numeric
+          val == 0
+        when String
+          val.empty?
+        when undefined, nil, false
+          true
+        else
+          false
+        end
+      end
+
       def self.call_with(function, this, *args)
         if function.is_a?(Object) && function.respond_to?(:call_with)
           function.call_with(this, *args)
