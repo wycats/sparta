@@ -49,4 +49,13 @@ describe "Function" do
     env.eval("x = 1")
     env.eval("x").should == 1
   end
+
+  it "raises an exception if called without a function" do
+    lambda { e("x = { a: 1 }; x.a()") }.should raise_error(Sparta::Runtime::TypeError)
+    lambda { e("x = {}; x.a()") }.should raise_error(Sparta::Runtime::TypeError)
+  end
+
+  it "evaluates the function's value only once" do
+    e("x = 0; ({ a: (x = x + 1), b: function() { return this.a; }}).b()").should == 1
+  end
 end

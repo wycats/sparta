@@ -4,6 +4,12 @@ module Sparta
       binding
     end
 
+    class Exception < ::Exception
+    end
+
+    class TypeError < Exception
+    end
+
     module Utils
       def self.ToString(object)
         object.to_s
@@ -16,6 +22,16 @@ module Sparta
           object.get(name)
         else
           object.send(name)
+        end
+      end
+
+      def self.call_with(function, this, *args)
+        if function.is_a?(Object) && function.respond_to?(:call_with)
+          function.call_with(this, *args)
+        else
+          # TODO: Use proper JS error semantics
+          # TODO: Include the variable name in the error (Chrome: Property 'a' of object #<Object> is not a function)
+          raise TypeError, "#{function} is not a function"
         end
       end
 

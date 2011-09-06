@@ -179,7 +179,7 @@ module RKelly
       end
 
       def visit_ThisNode(o)
-        say_status "This"
+        say_status "This", ""
       end
 
       def visit_BitwiseNotNode(o)

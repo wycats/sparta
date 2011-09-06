@@ -1,4 +1,5 @@
 require "sparta/scopes/scope"
+require "sparta/ast_visitor"
 
 module Sparta
   module Compilers
@@ -93,21 +94,27 @@ module Sparta
       end
 
       def visit_FunctionCallNode(o)
-        o.value.accept(self)
+        g.push_const :Utils
         set_line(o)
 
         case o.value
         when RKelly::Nodes::ResolveNode, RKelly::Nodes::FunctionExprNode
+          o.value.accept(self)
           s.push_variable :window
           size = o.arguments.accept(self)
           g.send :call_with, size + 1
         when RKelly::Nodes::DotAccessorNode
-          # TODO: do not evaluate o.value.value twice...
+          # don't evaluate o.value.value twice as it can contain
+          # expressions with side-effects
           o.value.value.accept(self)
-          size = o.arguments.accept(self)
 
-          # TODO: Deal with undefined
-          g.send :call_with, size + 1
+          g.dup_top
+          g.push_literal o.value.accessor.to_sym
+          g.send :get, 1
+          g.swap
+
+          size = o.arguments.accept(self)
+          g.send :call_with, size + 2
         end
       end
 
@@ -203,11 +210,6 @@ module Sparta
       def visit_NullNode(o)
         set_line(o)
         g.push_nil
-      end
-
-      def visit_UndefinedNode(o)
-        set_line(o)
-        g.push_undef
       end
 
       def visit_OpEqualNode(o)

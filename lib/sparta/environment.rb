@@ -44,6 +44,11 @@ module Sparta
       parser = RKelly::Parser.new
       ast    = parser.parse(string)
 
+      unless ast
+        # TODO: RKelly should provide more useful errors here
+        raise "The string #{string} was not valid JavaScript"
+      end
+
       cm = Sparta::Compilers::EvalCompiler.new.compile(ast)
       cm.scope = Rubinius::StaticScope.new(Sparta::Runtime)
       cm.scope.const_set :JS_WINDOW, @window
