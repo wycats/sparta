@@ -18,6 +18,32 @@ module Sparta
           object.send(name)
         end
       end
+
+      def self.typeof(resolve, name)
+        if resolve == undefined
+          "undefined"
+        else
+          val = resolve ? resolve.get(name) : name
+
+          # TODO: Deal with host objects
+          case val
+          when undefined
+            "undefined"
+          when nil
+            "object"
+          when TrueClass, FalseClass
+            "boolean"
+          when Numeric
+            "number"
+          when String
+            "string"
+          when Function
+            "function"
+          else
+            "object"
+          end
+        end
+      end
     end
 
     # Object protocol:
@@ -57,8 +83,8 @@ module Sparta
       end
 
       def get(name)
-        if value = self[name]
-          value
+        if self.key?(name)
+          self[name]
         elsif proto = prototype
           proto.get(name)
         else

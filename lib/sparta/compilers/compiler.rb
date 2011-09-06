@@ -43,7 +43,14 @@ module Sparta
       end
 
       def visit_VarDeclNode(o)
-        o.value.accept(self)
+        set_line(o)
+
+        if o.value
+          o.value.accept(self)
+        else
+          g.push_undef
+        end
+
         s.set_local o.name
       end
 
@@ -295,6 +302,24 @@ module Sparta
         g.push_const :Object
         super
         g.send :with_constructor, 1
+      end
+
+      def visit_TypeOfNode(o)
+        set_line(o)
+
+        if o.value.is_a?(RKelly::Nodes::DotAccessorNode)
+          g.push_const :Utils
+          o.value.value.accept(self)
+          g.push_literal o.value.accessor.to_sym
+          g.send :typeof, 2
+        elsif o.value.is_a?(RKelly::Nodes::FunctionExprNode)
+          g.push_literal "function"
+        else
+          g.push_const :Utils
+          g.push_nil
+          o.value.accept(self)
+          g.send :typeof, 2
+        end
       end
 
       protected

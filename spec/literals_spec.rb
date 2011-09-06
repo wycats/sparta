@@ -23,6 +23,6 @@ describe "primitive literals" do
   end
 
   it "understands undefined" do
-    e("undefined").should == undefined
+    e("x = undefined; x").should == undefined
   end
 end
