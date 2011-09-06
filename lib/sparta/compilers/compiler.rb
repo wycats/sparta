@@ -141,6 +141,14 @@ module Sparta
         g.send :logical_not, 1
       end
 
+      def visit_LogicalOrNode(o)
+        short_circuit o, true
+      end
+
+      def visit_LogicalAndNode(o)
+        short_circuit o, false
+      end
+
       def visit_AddNode(o)
         o.left.accept(self)
         set_line(o)
@@ -187,6 +195,13 @@ module Sparta
           g.push_int -1
           g.send :*, 1
         end
+      end
+
+      def visit_StrictEqualNode(o)
+        set_line(o)
+
+        super
+        g.send :equal?, 1
       end
 
       def visit_NumberNode(o)
@@ -339,7 +354,29 @@ module Sparta
         end
       end
 
-      protected
+    protected
+
+      def short_circuit(o, short_circuit_if_true)
+        fin = g.new_label
+
+        set_line(o)
+        o.left.accept(self)
+
+        g.dup_top
+        g.push_const :Utils
+        g.swap
+        g.send :ToBoolean, 1
+
+        if short_circuit_if_true
+          g.git fin
+        else
+          g.gif fin
+        end
+
+        g.pop
+        o.value.accept(self)
+        fin.set!
+      end
 
       def set_line(o)
         g.set_line o.line if o.line

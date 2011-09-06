@@ -15,6 +15,23 @@ module Sparta
         object.to_s
       end
 
+      def self.ToBoolean(object)
+        case object
+        when Numeric
+          object != 0
+        when String
+          !object.empty?
+        when undefined, nil, false
+          false
+        else
+          true
+        end
+      end
+
+      def self.logical_not(val)
+        !ToBoolean(val)
+      end
+
       def self.brackets(object, name)
         name = ToString(name)
 
@@ -22,19 +39,6 @@ module Sparta
           object.get(name)
         else
           object.send(name)
-        end
-      end
-
-      def self.logical_not(val)
-        case val
-        when Numeric
-          val == 0
-        when String
-          val.empty?
-        when undefined, nil, false
-          true
-        else
-          false
         end
       end
 
