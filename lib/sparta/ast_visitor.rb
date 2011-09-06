@@ -30,7 +30,7 @@ module RKelly
       def binary(name, o)
         with_padding(name) do
           with_padding("@left") { o.left.accept(self) }
-          with_padding("@right") { o.value.accept(self) }
+          with_padding("@value") { o.value.accept(self) }
         end
       end
 
