@@ -72,7 +72,7 @@ module RKelly
           with_padding("@init") { o.init.accept(self) }
           with_padding("@test") { o.test.accept(self) }
           with_padding("@counter") { o.counter.accept(self) }
-          super
+          o.value.accept(self)
         end
       end
 
