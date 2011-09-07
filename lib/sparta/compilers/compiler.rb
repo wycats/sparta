@@ -75,10 +75,16 @@ module Sparta
 
         g.push_const :Function
 
+        if o.value
+          g.push_literal o.value.to_sym
+        else
+          g.push_literal :anonymous
+        end
+
         # Invoke the create block instruction
         # with the generator of the block compiler
         g.create_block block.finalize
-        g.send :new, 1
+        g.send :new, 2
       end
 
       def visit_ParameterNode(o)

@@ -102,9 +102,13 @@ module Sparta
       end
 
       def function(name, block=name)
-        block = method(block) if block.is_a?(Symbol)
+        if block.is_a?(Symbol)
+          block = method(block).executable
+        else
+          block = block.code
+        end
 
-        self[name] = Function.new(block)
+        self[name] = Function.new(name, block)
       end
 
       def to_hash
@@ -168,16 +172,14 @@ module Sparta
       end
 
       def self.empty_object
-        obj                 = allocate
+        obj            = allocate
         obj.prototype  = OBJECT_PROTOTYPE
-        obj.js_class      = "Object"
+        obj.js_class   = "Object"
         obj.extensible = true
       end
     end
 
-    OBJECT_PROTOTYPE   = Runtime::Object.new
     ARRAY_PROTOTYPE    = Runtime::Object.new
-    FUNCTION_PROTOTYPE = Runtime::Object.new
 
     class Array < Object
       thunk_method :prototype, ARRAY_PROTOTYPE
@@ -207,51 +209,79 @@ module Sparta
       end
     end
 
-    class Function < Object
-      thunk_method :prototype, FUNCTION_PROTOTYPE
-      thunk_method :js_class, "Function"
-
-      def self.for_block(&block)
-        new(block.block)
+    class FunctionPrototype < Object
+      def initialize
+        function :call
       end
 
-      def initialize(block)
-        @block = block
+      def call(this, *args)
+        call_with(this, *args)
+      end
+    end
+
+    class Function < Object
+      def self.for_block(name=:anonymous, &block)
+        new(name, block.block.code)
+      end
+
+      def initialize(name, executable)
+        @name = name
+
+        # created from compiled code
+        if executable.is_a?(Rubinius::BlockEnvironment)
+          @executable = executable.code
+
+        # created directly from Ruby code (host objects)
+        else
+          @executable = executable
+        end
       end
 
       def call(*args)
-        @block.call(*args)
+        @executable.invoke(@name, @executable.scope.module, JS_WINDOW, args, nil)
       end
 
       def call_with(this, *args)
-        @block.call_under(this, @block.static_scope, *args)
+        @executable.invoke(@name, @executable.scope.module, this, args, nil)
       end
     end
 
-    OBJECT_PROTOTYPE[:hasOwnProperty] = Function.for_block do |key|
-      key?(key.to_sym)
+    FUNCTION_PROTOTYPE = FunctionPrototype.new
+
+    class Function
+      thunk_method :prototype, FUNCTION_PROTOTYPE
+      thunk_method :js_class, "Function"
     end
 
-    OBJECT_PROTOTYPE[:toString] = Function.for_block do
-      case self
-      when undefined
-        "[object Undefined]"
-      when nil
-        "[object Null]"
-      when String
-        "[object String]"
-      when TrueClass, FalseClass
-        "[object Boolean]"
-      when Numeric
-        "[object Number]"
-      else
-        "[object #{self.js_class}]"
+    class ObjectPrototype < Object
+      def initialize
+        function :hasOwnProperty
+        function :toString
+      end
+
+      def hasOwnProperty(key)
+        key?(key.to_sym)
+      end
+
+      def toString
+        case self
+        when undefined
+          "[object Undefined]"
+        when nil
+          "[object Null]"
+        when String
+          "[object String]"
+        when TrueClass, FalseClass
+          "[object Boolean]"
+        when Numeric
+          "[object Number]"
+        else
+          "[object #{self.js_class}]"
+        end
       end
     end
 
-    FUNCTION_PROTOTYPE[:call] = Function.for_block do |this, *args|
-      call_with(this, *args)
-    end
+    OBJECT_PROTOTYPE = ObjectPrototype.new
 
     class LiteralObject < Object
       thunk_method :prototype, OBJECT_PROTOTYPE
