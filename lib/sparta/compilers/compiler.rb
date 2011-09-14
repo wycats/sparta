@@ -360,7 +360,30 @@ module Sparta
         end
       end
 
+      def visit_IfNode(o)
+        set_line(o)
+
+        els = g.new_label
+        fin = g.new_label
+
+        o.conditions.accept(self)
+        to_boolean
+
+        g.gif els
+        o.value.accept(self)
+        g.goto fin
+        els.set!
+        o.else.accept(self) if o.else
+        fin.set!
+      end
+
     protected
+
+      def to_boolean
+        g.push_const :Utils
+        g.swap
+        g.send :ToBoolean, 1
+      end
 
       def short_circuit(o, short_circuit_if_true)
         fin = g.new_label
@@ -369,9 +392,7 @@ module Sparta
         o.left.accept(self)
 
         g.dup_top
-        g.push_const :Utils
-        g.swap
-        g.send :ToBoolean, 1
+        to_boolean
 
         if short_circuit_if_true
           g.git fin

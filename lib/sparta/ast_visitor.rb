@@ -349,7 +349,7 @@ module RKelly
         with_padding("If") do
           with_padding("@conditions") { o.conditions.accept(self) }
           with_padding("@value") { o.value.accept(self) }
-          with_padding("@else") { o.else.accept(self) }
+          with_padding("@else") { o.else.accept(self) } if o.else
         end
       end
 
